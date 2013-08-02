@@ -6,7 +6,7 @@
 % Exported for testing
 -export([sample_data/0, sample_error_data/0]).
 
--define(BASE_URL, "http://~s/agent_listener/invoke_raw_method?").
+-define(BASE_URL, "https://~s/agent_listener/12/invoke_raw_method?").
 
 -define(l2b(L), list_to_binary(L)).
 -define(l2i(L), list_to_integer(L)).
@@ -47,29 +47,30 @@ get_redirect_host() ->
 
 
 connect(Collector, Hostname) ->
-    Url = url(Collector, [{method, connect}]),
+  Url = url(Collector, [{method, connect}]),
 
-    Data = [{[
-              {agent_version, <<"1.5.0.103">>},
-              {app_name, [app_name()]},
-              {host, ?l2b(Hostname)},
-              {identifier, app_name()},
-              {pid, ?l2i(os:getpid())},
-              {environment, []},
-              {language, <<"python">>},
-              {settings, {[]}}
-             ]}],
-
-    case request(Url, jiffy:encode(Data)) of
-        {ok, {{200, "OK"}, _, Body}} ->
-            {Struct} = jiffy:decode(Body),
-            {Return} = proplists:get_value(<<"return_value">>, Struct),
-            proplists:get_value(<<"agent_run_id">>, Return);
-        {ok, {{503, _}, _, _}} ->
-            throw(newrelic_down);
-        {error, timeout} ->
-            throw(newrelic_down)
-    end.
+  Data1 = [{[{<<"agent_version">>,<<"1.5.0.103">>},
+    {<<"app_name">>, [app_name()]},
+    {<<"host">>, ?l2b(Hostname)},
+    {<<"identifier">>, app_name()},
+    {<<"pid">>, ?l2i(os:getpid())},
+    {<<"environment">>,[]},
+    {<<"language">>,<<"ruby">>},
+    {<<"settings">>,
+      {[{<<"capture_params">>,false},
+      {<<"transaction_tracer">>,
+        {[{<<"record_sql">>,<<"off">>}]}}]}}
+    ]}],
+  case request(Url, jiffy:encode(Data1)) of
+      {ok, {{200, "OK"}, _, Body}} ->
+          {Struct} = jiffy:decode(Body),
+          {Return} = proplists:get_value(<<"return_value">>, Struct),
+          proplists:get_value(<<"agent_run_id">>, Return);
+      {ok, {{503, _}, _, _}} ->
+          throw(newrelic_down);
+      {error, timeout} ->
+          throw(newrelic_down)
+  end.
 
 
 push_metric_data(Collector, RunId, MetricData) ->
@@ -90,7 +91,7 @@ push_error_data(Collector, RunId, ErrorData) ->
     Data = [RunId,
             ErrorData],
 
-	push_data(Url, Data).
+  push_data(Url, Data).
 
 
 push_data(Url, Data) ->
@@ -142,7 +143,7 @@ url(Args) ->
     url("collector.newrelic.com", Args).
 
 url(Host, Args) ->
-    BaseArgs = [{protocol_version, 10},
+    BaseArgs = [{protocol_version, 12},
                 {license_key,  license_key()},
                 {marshal_format, json}],
     lists:flatten([io_lib:format(?BASE_URL, [Host]), urljoin(Args ++ BaseArgs)]).
@@ -283,36 +284,36 @@ sample_data() ->
     ].
 
 sample_error_data() ->
-	[[
-	    now_to_seconds(),
-	    <<"WebTransaction/Uri/testUrl">>,
-	    <<"error">>,
-	    <<"RuntimeError">>,
-	    {
-	        [
-	          {<<"parameter_groups">>,
-	            {[{<<"Transaction metrics">>,
-	                  {[{<<"Thread/Concurrency">>,<<"1.0146">>}]}
-	                },
-	                {<<"Response properties">>,
-	                  {[{<<"CONTENT_LENGTH">>,<<"12">>},
-	                      {<<"STATUS">>,<<"200">>}]}
-	                }
-	              ]}
-	          },
-	          {<<"stack_trace">>,
-	            [
-	              <<"Traceback (most recent call last):\n">>,
-	              <<"  Stacktrace line 1">>,
-	              <<"  Stacktrace line 2">>,
-	              <<"  Stacktrace line 3">>,
-	              <<"  Stacktrace line 4">>,
-	              <<"RuntimeError: error\n">>
-	            ]
-	          },
-	          {<<"request_params">>,{[{<<"key">>,[<<"value">>]}]}},
-	          {<<"request_uri">>,<<"/testUrl">>}
-	        ]
-	     }
-	]].
+  [[
+      now_to_seconds(),
+      <<"WebTransaction/Uri/testUrl">>,
+      <<"error">>,
+      <<"RuntimeError">>,
+      {
+          [
+            {<<"parameter_groups">>,
+              {[{<<"Transaction metrics">>,
+                    {[{<<"Thread/Concurrency">>,<<"1.0146">>}]}
+                  },
+                  {<<"Response properties">>,
+                    {[{<<"CONTENT_LENGTH">>,<<"12">>},
+                        {<<"STATUS">>,<<"200">>}]}
+                  }
+                ]}
+            },
+            {<<"stack_trace">>,
+              [
+                <<"Traceback (most recent call last):\n">>,
+                <<"  Stacktrace line 1">>,
+                <<"  Stacktrace line 2">>,
+                <<"  Stacktrace line 3">>,
+                <<"  Stacktrace line 4">>,
+                <<"RuntimeError: error\n">>
+              ]
+            },
+            {<<"request_params">>,{[{<<"key">>,[<<"value">>]}]}},
+            {<<"request_uri">>,<<"/testUrl">>}
+          ]
+       }
+  ]].
 
