@@ -49,7 +49,7 @@ get_redirect_host() ->
 connect(Collector, Hostname) ->
   Url = url(Collector, [{method, connect}]),
 
-  Data1 = [{[{<<"agent_version">>,<<"1.5.0.103">>},
+  Data = [{[{<<"agent_version">>,<<"3.6.6">>},
     {<<"app_name">>, [app_name()]},
     {<<"host">>, ?l2b(Hostname)},
     {<<"identifier">>, app_name()},
@@ -61,7 +61,7 @@ connect(Collector, Hostname) ->
       {<<"transaction_tracer">>,
         {[{<<"record_sql">>,<<"off">>}]}}]}}
     ]}],
-  case request(Url, jiffy:encode(Data1)) of
+  case request(Url, jiffy:encode(Data)) of
       {ok, {{200, "OK"}, _, Body}} ->
           {Struct} = jiffy:decode(Body),
           {Return} = proplists:get_value(<<"return_value">>, Struct),

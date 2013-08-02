@@ -220,14 +220,15 @@ pluck(Name, N, L) ->
                       end
               end, L).
 
-
-
 class2bin(db) -> <<"Database">>;
 class2bin(Atom) when is_atom(Atom) ->
     [F | R] = atom_to_list(Atom),
     list_to_binary([string:to_upper(F) | R]).
 
-to_bin(Atom) when is_atom(Atom) -> list_to_binary(atom_to_list(Atom));
+to_bin(Atom) when is_atom(Atom) -> to_bin(atom_to_list(Atom));
+to_bin(Integer) when is_integer(Integer) -> to_bin(integer_to_list(Integer));
+to_bin([]) -> <<"">>;
+to_bin(List) when is_list(List) -> list_to_binary(List);
 to_bin(Bin) when is_binary(Bin)-> Bin.
 
 bgscope2bin(Scope) ->
